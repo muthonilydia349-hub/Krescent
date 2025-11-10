@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Krescent — Truth or Dare</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--accent:#f472b6;--muted:#94a3b8;--glass:rgba(255,255,255,0.04)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;color:#e6eef8;background:linear-gradient(180deg,#071029 0%,#081028 60%,#05101a 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .app{width:980px;max-width:100%;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:16px;padding:20px;box-shadow:0 10px 30px rgba(2,6,23,0.6);display:grid;grid-template-columns:360px 1fr;gap:18px}
+    .sidebar{background:var(--card);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+    h1{margin:0;font-size:20px;display:flex;gap:10px;align-items:center}
+    .logo{height:34px;width:34px;border-radius:8px;background:linear-gradient(135deg,#f472b6,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+    .muted{color:var(--muted);font-size:13px;margin-top:6px}
+    label{display:block;margin-top:12px;font-size:13px;color:var(--muted)}
+    select,input[type="text"]{width:100%;padding:10px;margin-top:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit}
+    .btn{display:inline-block;padding:10px 14px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent),#7c3aed);color:white;font-weight:600;cursor:pointer}
+    .main{padding:18px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border-radius:12px;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .wheel{width:260px;height:260px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(from 90deg, rgba(244,114,182,0.12) 0 50%, rgba(124,58,237,0.08) 50% 100%);box-shadow:inset 0 6px 20px rgba(0,0,0,0.5)}
+    .center{width:130px;height:130px;border-radius:50%;background:linear-gradient(180deg,#071428,#0b2540);display:flex;flex-direction:column;align-items:center;justify-content:center;color:white}
+    .choice{font-size:22px;font-weight:700}
+    .spin{margin-top:8px}
+    .history{margin-top:16px;width:100%;max-height:220px;overflow:auto;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02)}
+    .history p{margin:6px 0;font-size:14px}
+    .question{font-size:18px;text-align:center;padding:18px}
+    .big{font-size:20px;font-weight:700}
+    .controls{display:flex;gap:10px;margin-top:12px}
+    .chip{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:13px}
+    footer{margin-top:18px;color:var(--muted);font-size:12px}
+    .editable{width:100%;min-height:80px;padding:10px;margin-top:8px;border-radius:8px;border:1px dashed rgba(255,255,255,0.03);background:transparent;color:inherit}
+    .row{display:flex;gap:8px;align-items:center}
+    @media(max-width:880px){.app{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Krescent Truth or Dare">
+    <div class="sidebar">
+      <div class="row"><div class="logo">K</div><div><h1>Krescent</h1><div class="muted">Flirty & playful — customizable</div></div></div>
+
+      <label for="mode">Players</label>
+      <select id="mode"><option>Local (take turns)</option><option>Pass-and-play</option></select>
+
+      <label for="vibe">Vibe</label>
+      <select id="vibe"><option>Flirty (classy)</option><option>Playful</option><option>Custom</option></select>
+
+      <label for="dlevel">Edginess</label>
+      <select id="dlevel"><option value="0">Mild</option><option value="1">Medium</option><option value="2">Spicy (no explicit)</option></select>
+
+      <label>Custom truths (one per line)</label>
+      <textarea id="customTruths" class="editable" placeholder="Add your own truth questions..." aria-label="custom truths"></textarea>
+
+      <label>Custom dares (one per line)</label>
+      <textarea id="customDares" class="editable" placeholder="Add your own dares..." aria-label="custom dares"></textarea>
+
+      <div style="margin-top:12px;display:flex;gap:8px"><button id="save" class="btn">Save & Use</button><button id="reset" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.06)">Reset</button></div>
+
+      <div class="muted" style="margin-top:10px">Tip: You can edit any list, then press Save & Use to apply.</div>
+    </div>
+
+    <div class="main">
+      <div class="wheel" aria-hidden>
+        <div class="center">
+          <div class="choice" id="choiceText">Spin</div>
+          <div class="spin"> <button id="spinBtn" class="btn">Truth or Dare</button></div>
+        </div>
+      </div>
+
+      <div class="question" id="questionBox">Press <strong>Truth or Dare</strong> to begin — you can customize the lists on the left.</div>
+
+      <div class="controls">
+        <div class="chip">Players: <span id="playerCount">1</span></div>
+        <div class="chip">Edginess: <span id="edgyLabel">Mild</span></div>
+        <div class="chip">Category: <span id="catLabel">Mixed</span></div>
+      </div>
+
+      <div class="history" id="history"></div>
+
+      <footer>Made with ✨ — Krescent</footer>
+    </div>
+  </div>
+
+  <script>
+    // Default lists — flirty but non-explicit. You can edit in the textarea.
+    const defaultTruths = [
+      "Who was your first crush?",
+      "What’s the sweetest thing someone did for you?",
+      "Have you ever had a secret admirer?",
+      "What’s a romantic fantasy you’d share with someone?",
+      "Who here would you want to go on a date with?",
+      "Have you ever pretended to like someone?",
+      "What’s one thing that makes you blush?",
+      "Do you believe in love at first sight?",
+      "What’s your go-to move to get someone's attention?",
+      "Tell one small secret about your last relationship."
+    ];
+
+    const defaultDares = [
+      "Send a playful compliment to someone in the room.",
+      "Give someone a 10-second flirty wink.",
+      "Share a cute nickname you'd give a crush.",
+      "Do your best 'movie kiss' pose for a photo.",
+      "Text your crush (or a friend) a heart emoji.",
+      "Whisper something nice into the ear of the person on your left.",
+      "Give a 20-second dramatic slow clap for someone.",
+      "Describe your perfect date in 30 seconds.",
+      "Trade a fun fact about yourself with the group.",
+      "Offer to serenade someone with a short line from a song."
+    ];
+
+    // State
+    let truths = [...defaultTruths];
+    let dares = [...defaultDares];
+
+    // Elements
+    const spinBtn = document.getElementById('spinBtn');
+    const questionBox = document.getElementById('questionBox');
+    const history = document.getElementById('history');
+    const customTruths = document.getElementById('customTruths');
+    const customDares = document.getElementById('customDares');
+    const saveBtn = document.getElementById('save');
+    const resetBtn = document.getElementById('reset');
+    const edgyLabel = document.getElementById('edgyLabel');
+    const dlevel = document.getElementById('dlevel');
+
+    function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+    function updateLabels(){
+      const level = Number(dlevel.value || 0);
+      edgyLabel.textContent = ['Mild','Medium','Spicy (no explicit)'][level] || 'Mild';
+    }
+
+    function saveCustoms(){
+      const t = customTruths.value.split('\n').map(s=>s.trim()).filter(Boolean);
+      const d = customDares.value.split('\n').map(s=>s.trim()).filter(Boolean);
+      truths = t.length? [...defaultTruths, ...t] : [...defaultTruths];
+      dares = d.length? [...defaultDares, ...d] : [...defaultDares];
+      addHistory('Lists updated — ready to play!');
+    }
+
+    saveBtn.addEventListener('click', ()=>{ saveCustoms(); updateLabels(); });
+    resetBtn.addEventListener('click', ()=>{ customTruths.value=''; customDares.value=''; truths=[...defaultTruths]; dares=[...defaultDares]; addHistory('Lists reset to defaults'); updateLabels(); });
+
+    function addHistory(text){
+      const p = document.createElement('p'); p.textContent = text; history.prepend(p);
+    }
+
+    function safeFilter(text){
+      // small safety filter: disallow explicit sexual terms, phone numbers, or requests for illegal activity
+      const forbidden = [/\b(nude|porn|sex|xxx|intercourse|explicit)\b/i, /\b(\d{7,})\b/];
+      for(const rx of forbidden) if(rx.test(text)) return false; return true;
+    }
+
+    spinBtn.addEventListener('click', ()=>{
+      // Decide truth or dare
+      const mode = Math.random() < 0.5 ? 'Truth' : 'Dare';
+      document.getElementById('choiceText').textContent = mode;
+
+      // pick question
+      let q = mode==='Truth' ? pickRandom(truths) : pickRandom(dares);
+      if(!safeFilter(q)) { q = 'That question was blocked by safety filter.'; }
+
+      // Edginess tweak (simple): for higher edginess, occasionally prompt a 'double-dare' or 'confess' twist
+      const level = Number(dlevel.value || 0);
+      if(level===2 && Math.random()<0.25) q += ' (Double-dare: add a playful twist)';
+      if(level===1 && Math.random()<0.12) q += ' (Spice it up a little!)';
+
+      questionBox.innerHTML = `<div class="big">${mode}</div><div style="margin-top:8px">${q}</div>`;
+      addHistory(`${mode}: ${q}`);
+    });
+
+    // Init
+    updateLabels(); addHistory('Welcome to Krescent — press Truth or Dare to start');
+
+    // Keyboard shortcut: press space to spin
+    window.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ e.preventDefault(); spinBtn.click(); }});
+
+    // Accessibility: focus on button
+    spinBtn.focus();
+  </script>
+</body>
+</html>
